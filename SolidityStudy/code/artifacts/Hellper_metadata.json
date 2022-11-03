@@ -1,0 +1,72 @@
+{
+	"compiler": {
+		"version": "0.8.17+commit.8df45f5f"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [],
+				"name": "getBalance",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "contract Kill",
+						"name": "_kill",
+						"type": "address"
+					}
+				],
+				"name": "kill",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"Kill.sol": "Hellper"
+		},
+		"evmVersion": "london",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"Kill.sol": {
+			"keccak256": "0x027a1af20ac138abc9a8cdba2a1d08fce7e5162a54a18102fb287f9947a41866",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://6fb7e304cc255a380743abc2151acc65bb98dbf1e098a83acf4110341ddd714f",
+				"dweb:/ipfs/QmYdz6SwLAtGJi8TSR18YnN2Spc6Bts14Ro2rX1cRbRxow"
+			]
+		}
+	},
+	"version": 1
+}
