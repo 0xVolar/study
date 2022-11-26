@@ -6,6 +6,15 @@
 	"output": {
 		"abi": [
 			{
+				"inputs": [],
+				"stateMutability": "payable",
+				"type": "constructor"
+			},
+			{
+				"stateMutability": "payable",
+				"type": "fallback"
+			},
+			{
 				"inputs": [
 					{
 						"internalType": "bytes",
@@ -96,6 +105,17 @@
 				],
 				"stateMutability": "pure",
 				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "testTransfer",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"stateMutability": "payable",
+				"type": "receive"
 			}
 		],
 		"devdoc": {
@@ -126,11 +146,11 @@
 	},
 	"sources": {
 		"AbiDecode.sol": {
-			"keccak256": "0x394d7ecc1736613fd6468f7015fe74ee0422d725c0379533f8a321ec63265b8e",
+			"keccak256": "0x606c89d1ff1cb1c44631055ee49e39c24812e694a7d7e2f76c7d05e4aba200bf",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://e01bf6fc46c4a7d6124535b3ed38320131996ab9cbb4ba7690f36c64a663c26e",
-				"dweb:/ipfs/QmaJ3sQx1N56d1TNURCCrCqWnSSm4C4XxwLnYjd9GzbYWY"
+				"bzz-raw://c665f637f7091f70803a8e4b15dbdb19d9ea688a3fcc859e6a5f7ecd90efb62c",
+				"dweb:/ipfs/QmaW64vidaub71AEyoUREQBkhhYZM5pM59FPFV8wdf59o8"
 			]
 		}
 	},
