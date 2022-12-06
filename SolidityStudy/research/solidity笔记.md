@@ -84,8 +84,12 @@
 
 - 使用
     - `function inc() external whenNotPaused {}`
-    - 有传入参数：`function 函数名(uint _x) external cap(_x) {}`
+    - **有传入参数**：`function 函数名(uint _x) external cap(_x) {}`
     - 再调用函数前想要进行某些认证的话，需要进行使用，函数修饰符来进行想要的判断，这样最大大的节省了代码，并且利于维护
+    - **在一个方法中可以使用多个modifer，每个的间隔需要用空格进行隔开，执行的顺序按照在方法中的先后顺序进行**。
+
+- `modifier`属于合约中可继承的一部份，**可以在继承的合约中进行使用**或者**overload**，如果要对其进行**overload的前提是，modifier使用了virtual**。同时在library中也可以使用modifier，但是只能在library中的方法使用modifier。
+- **modifier只能用来当作判断条件的使用**，并不可以改变传入参数的值，以及返回方法的值。
 
 ## 构造函数 ##
 - `constructor(参数名) { code }`
@@ -128,7 +132,12 @@
 
 # 常量 #
 - `address public constant MY_ADDRESS = 0x5B38Da6a701c568545dCfcB03FcB875f56beddC4;`
-    - 常量的声明，即在变量中加入**constant**，并且常量的名称默认为大写，中间用下划线**_**进行连接。使用常量可以减少gas费的消耗
+    - 常量的声明，即在变量中加入**constant**，并且常量的名称默认为大写，中间用下划线**_**进行连接。常量在进行
+- ` address immutable owner = msg.sender; `
+    - 常量的声明，即在变量中加入**immutable**，**只能够被赋值一次**，并且**不可以使用一个immutable变量去定义另一个immutable变量**
+
+constant和immutable都可以表示。但是**constant只能在编译时赋值**，**immutable可以在编译时赋值也可以在构造器中进行赋值**。并且在声明时赋值为表达式的话，**constant保存的是表达式，在每次引用时都会重新进行计算**，而**immutab会将表达式的值进行计算后再赋值**
+- 对于表达式的选择，对于**获取storage数据**的、**获取链上数据**的、**获取执行数据**的、**调用其他函数的方法**是不允许的，并且**影响其他在memory中的变量也是不行的**。
 
 # Error控制 #
 ## 智能合约中的三种报错控制方法 ##
@@ -157,6 +166,15 @@
 - 定长数组
     - `uint[3] public numsFixed = [4, 5, 6];`
     - 在声明时，在方括号中需要填入数字，表明该数组的长度，再往该数组添加数据的时候，不可超过数组的长度
+
+- 在声明数组时，public进行修饰的变量会提供一个getter方法，可以**通过getter方法获取整个数组**,如果想要获取数组中的具体某个值，可以使用`array[index]`使用。
+  - ```
+    uint[] public array;
+    //返回整个数组
+    function getArrat() external returns(uint[] memory) {
+        return array
+    }
+    ```
 
 ## 数组的操作方法 ##
 - `push();`
