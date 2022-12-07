@@ -28,3 +28,10 @@ while (flag2 < 10) {
     console.log("flag2 = " + flag2);
     flag2++;
 }
+
+//do...while
+var flag3 = 0;
+do {
+    console.log("flag3 = " + flag3);
+    flag3++;
+} while(flag3 < 10);
