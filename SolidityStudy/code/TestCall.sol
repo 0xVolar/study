@@ -22,7 +22,7 @@ contract Call {
     bytes public data;
 
     function callFoo(address _test) external payable{
-        (bool success, bytes memory _data ) = _test.call{value: 111}(abi.encodeWithSignature(
+        (bool success, bytes memory _data ) = _test.call(abi.encodeWithSignature(
             "foo(string,uint256)", "call foo", 123
         ));
         require(success, "call failed");
@@ -33,4 +33,5 @@ contract Call {
         (bool success, ) = _test.call(abi.encodeWithSignature("doesNotExit()"));
         require(success, "callfailed");
     }
+    
 }

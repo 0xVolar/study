@@ -46,7 +46,7 @@
 1. **byte32**
     1. `bytes32 public b32 = ;`
     2. bytes类型的最大值为32，即只能声明`bytes32`。不同的声明范围所表示的范围也不同，bytes32即表示一个256位(bit)的数。
-    3. **默认值为32字节的0**
+    3. **默认值为32字节的0x**
 
 ## 定义不可变量 ##
 - ` address public immutable owner = msg.sender; `
