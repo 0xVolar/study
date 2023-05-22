@@ -22,19 +22,8 @@ type Bucket struct {
 3.返回对应的节点地址
 */
 func (s *Node) FindNode(id string) (*Node, *Node) {
-	num, err := strconv.Atoi(id)
-	num1, err1 := strconv.Atoi(s.nodeID)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return nil, nil
-	}
-	if err1 != nil {
-		fmt.Println("Error:", err)
-		return nil, nil
-	}
-
 	//计算距离获取是第几个桶
-	result := 160 - (num ^ num1)
+	result := findBucket(s.nodeID, id)
 	var a *Bucket
 	if result >= len(s.buckets) {
 		a = s.buckets[len(s.buckets)-1]
@@ -90,8 +79,44 @@ func find2minIndex(arr []int) (int, int) {
 */
 
 func (s *Node) InsertNode(nodeId string) bool {
+	result := findBucket(s.nodeID, nodeId)
+	if result < 0 {
+		return false
+	}
+
+	var bucket *Bucket
+	if result >= len(s.buckets)-1 {
+		bucket = s.buckets[len(s.buckets)-1]
+		insertIntoClose(bucket)
+	} else {
+		bucket = s.buckets[result]
+		isnertIntoFar(bucket)
+	}
 
 	return true
+}
+
+func insertIntoClose(bucket *Bucket) {
+
+}
+
+func isnertIntoFar(bucket *Bucket) {
+
+}
+
+func findBucket(selfId, tragetId string) int {
+	num, err := strconv.Atoi(selfId)
+	num1, err1 := strconv.Atoi(tragetId)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return -1
+	}
+	if err1 != nil {
+		fmt.Println("Error:", err)
+		return -1
+	}
+	result := 160 - (num ^ num1)
+	return result
 }
 
 /**
