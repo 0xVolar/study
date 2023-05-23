@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"strconv"
+	"time"
 )
 
 type Node struct {
@@ -31,39 +33,35 @@ func (s *Node) FindNode(id string) (*Node, *Node) {
 		a = s.buckets[result]
 	}
 
-	//对桶中的节点进行遍历计算出距离，
-	var distance []int
+	//对桶中的节点进行遍历看是否有目标节点，如果没有的话返回随机的两个节点信息
 	for _, v := range a.ids {
-		id_int, _ := strconv.Atoi(v.nodeID)
-		distance = append(distance, id_int)
+		if v.nodeID == id {
+			return nil, nil
+		}
 	}
 	//获取桶中最近的两个节点并返回
-	index1, index2 := find2minIndex(distance)
+	index1, index2 := GetRandom2()
 
 	return a.ids[index1], a.ids[index2]
 }
 
-// 返回数组中最小的两个值的下标,两个下标必须不同-
-func find2minIndex(arr []int) (int, int) {
-	index1, index2 := 0, 1
-	min1, min2 := arr[0], arr[1]
-	for i := 1; i < len(arr); i++ {
-		if arr[i] < min1 {
-			min1 = arr[i]
-			index1 = i
+// 生成两个随机数
+func GetRandom2() (int, int) {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	// 随机生成两个不重复的整数
+	var first, second int
+	done := false
+	for !done {
+		first, second = r.Intn(3), r.Intn(3)
+		if first != second {
+			done = true
+			break
 		}
+		// 使用随机数生成器进行洗牌，确保随机数不重复
 	}
-	for i := 0; i < len(arr); i++ {
-		if i == index1 {
-			continue
-		}
-		if arr[i] < min2 {
-			min2 = arr[i]
-			index2 = i
-		}
-	}
-
-	return index1, index2
+	// 输出随机数
+	fmt.Println(first, second)
+	return first, second
 }
 
 /**
@@ -125,8 +123,5 @@ func findBucket(selfId, tragetId string) int {
 */
 
 func main() {
-	arr := []int{0, 5, 20, 8, 15, 3, 25, 12, 11, 3, 3}
-	index1, idnex2 := find2minIndex(arr)
-	fmt.Print("idnex1 = ", index1, "\n")
-	fmt.Print("idnex2 = ", idnex2, "\n")
+
 }
