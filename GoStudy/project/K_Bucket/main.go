@@ -166,6 +166,13 @@ func findBucket(selfId, tragetId string) int {
 	return result
 }
 
+// 打印桶中的id
+func (s *Bucket) printBucketContents() {
+	for _, v := range s.ids {
+		fmt.Printf("nodeID = %s \n", v.nodeID)
+	}
+}
+
 /**
 1.新节点的加入
 	-
