@@ -178,15 +178,7 @@ func findBucket(selfId, targetId string) int {
 		return -1
 	}
 	result := strconv.FormatUint(uint64(num)^uint64(num1), 2)
-	count := 0
-	for _, v := range []byte(result) {
-		if v == '0' {
-			count++
-		} else if v == '1' {
-			break
-		}
-	}
-	return count
+	return 160 - len([]byte(result))
 }
 
 // 打印桶中的id
@@ -203,35 +195,35 @@ func (s *Bucket) printBucketContents() {
 
 func main() {
 	//测试insert方法
-	// node1 := Node{nodeID: "000000001110"}
-	// node := Node{nodeID: "000000000001"}
-	// bucket := Bucket{}
-	// bucket.ids = append(bucket.ids, &node1)
-	// node.buckets = append(node.buckets, &bucket)
+	node1 := Node{nodeID: "000000001110"}
+	node := Node{nodeID: "000000000001"}
+	bucket := Bucket{}
+	bucket.ids = append(bucket.ids, &node1)
+	node.buckets = append(node.buckets, &bucket)
 
-	// node.InsertNode("000000000111")
-	// node.InsertNode("100000000110")
-	// node.InsertNode("000000000100")
-	// node.InsertNode("000000001111")
-	// // node.InsertNode("111111111110")
+	node.InsertNode("000000000111")
+	node.InsertNode("100000000110")
+	node.InsertNode("000000000100")
+	node.InsertNode("000000001111")
+	node.InsertNode("111111111110")
 
-	// for i, v := range node.buckets {
-	// 	fmt.Printf("buckets num is = %d \n", i)
-	// 	v.printBucketContents()
-	// 	fmt.Println("--------------------------")
-	// }
-
-	num1, _ := strconv.ParseInt("000000000001", 2, 0)
-	num2, _ := strconv.ParseInt("000000001111", 2, 0)
-	result := strconv.FormatUint(uint64(num1)^uint64(num2), 2)
-	fmt.Println("result = ", result)
-	count := 0
-	for _, v := range []byte(result) {
-		if v == '0' {
-			count++
-		} else if v == '1' {
-			break
-		}
+	for i, v := range node.buckets {
+		fmt.Printf("buckets num is = %d \n", i)
+		v.printBucketContents()
+		fmt.Println("--------------------------")
 	}
-	fmt.Print("count = ", count)
+
+	// num1, _ := strconv.ParseInt("000000000001", 2, 0)
+	// num2, _ := strconv.ParseInt("000000001111", 2, 0)
+	// result := strconv.FormatUint(uint64(num1)^uint64(num2), 2)
+	// fmt.Println("result = ", result)
+	// count := 0
+	// for _, v := range []byte(result) {
+	// 	if v == '0' {
+	// 		count++
+	// 	} else if v == '1' {
+	// 		break
+	// 	}
+	// }
+	// fmt.Print("count = ", count)
 }
