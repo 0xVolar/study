@@ -10,12 +10,10 @@ import (
 type Node struct {
 	nodeID  string
 	buckets []*Bucket
-	link    *Bucket
 }
 
 type Bucket struct {
-	ids            []*Node
-	lchild, rchild int
+	ids []*Node
 }
 
 /*
@@ -97,6 +95,12 @@ func (s *Node) InsertNode(nodeId string) bool {
 
 func insertIntoClose(index int, new_node *Node, target_node *Node) {
 	bucket := target_node.buckets[index]
+	//判断桶中是否已经存在要加入的节点
+	for _, v := range bucket.ids {
+		if v.nodeID == new_node.nodeID {
+			return
+		}
+	}
 	//判断桶是否已满，没满的话加入桶中，满的话进行扩充
 	if len(bucket.ids) < 3 {
 		bucket.ids = append(bucket.ids, new_node)
@@ -145,6 +149,12 @@ func insertIntoClose(index int, new_node *Node, target_node *Node) {
 
 func isnertIntoFar(index int, new_node *Node, target_node *Node) {
 	bucket := target_node.buckets[index]
+	//查看桶中是否已经存在新的节点
+	for _, v := range bucket.ids {
+		if v.nodeID == new_node.nodeID {
+			return
+		}
+	}
 	//小于三个就更新，满了就不管（简化），事实上要进行心跳监测
 	if len(bucket.ids) < 3 {
 		bucket.ids = append(bucket.ids, new_node)
