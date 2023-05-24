@@ -16,6 +16,10 @@ type Bucket struct {
 	ids []*Node
 }
 
+func initNode(nodeId string) {
+
+}
+
 /*
 1.先异或生成距离
 2.找到对应的桶，在对应的K桶中找到距离最近的n（自定义）个节点
@@ -84,12 +88,14 @@ func (s *Node) InsertNode(nodeId string) bool {
 	var index int
 	if result >= len(s.buckets)-1 {
 		index = len(s.buckets) - 1
+		if index == -1 {
+			index = 0
+		}
 		insertIntoClose(index, &new_node, s)
 	} else {
 		index = result
 		isnertIntoFar(index, &new_node, s)
 	}
-
 	return true
 }
 
@@ -111,17 +117,16 @@ func insertIntoClose(index int, new_node *Node, target_node *Node) {
 		}
 		bucket_far := Bucket{}
 		bucket_near := Bucket{}
+
 		//将所有节点放到一起
-		nodes := bucket.ids
-		nodes = append(nodes, new_node)
+		bucket.ids = append(bucket.ids, new_node)
 		//将每个节点的距离计算出来并加入数组之中
 		var distance []int
-		for i, v := range nodes {
-			num1, _ := strconv.Atoi(v.nodeID)
-			num2, _ := strconv.Atoi(target_node.nodeID)
-			distance[i] = num1 ^ num2
+		for _, v := range bucket.ids {
+			num1, _ := strconv.ParseInt(v.nodeID, 2, 0)
+			num2, _ := strconv.ParseInt(target_node.nodeID, 2, 0)
+			distance = append(distance, int(num1^num2))
 		}
-
 		//对距离数组进行筛选，选出最近的1个节点加入最远桶
 		temp := distance[0]
 		index_max := 0
@@ -133,12 +138,12 @@ func insertIntoClose(index int, new_node *Node, target_node *Node) {
 		}
 
 		//将最远的节点加入最远桶，最近的加入最近桶
-		bucket_far.ids = append(bucket_far.ids, nodes[index_max])
+		bucket_far.ids = append(bucket_far.ids, bucket.ids[index_max])
 		for i, _ := range distance {
 			if i == index_max {
 				continue
 			}
-			bucket_near.ids = append(bucket_near.ids, nodes[i])
+			bucket_near.ids = append(bucket_near.ids, bucket.ids[i])
 		}
 
 		//将bucket进行更新
@@ -161,9 +166,9 @@ func isnertIntoFar(index int, new_node *Node, target_node *Node) {
 	}
 }
 
-func findBucket(selfId, tragetId string) int {
-	num, err := strconv.Atoi(selfId)
-	num1, err1 := strconv.Atoi(tragetId)
+func findBucket(selfId, targetId string) int {
+	num, err := strconv.ParseInt(selfId, 2, 0)
+	num1, err1 := strconv.ParseInt(targetId, 2, 0)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return -1
@@ -172,8 +177,16 @@ func findBucket(selfId, tragetId string) int {
 		fmt.Println("Error:", err)
 		return -1
 	}
-	result := 160 - (num ^ num1)
-	return result
+	result := strconv.FormatUint(uint64(num)^uint64(num1), 2)
+	count := 0
+	for _, v := range []byte(result) {
+		if v == '0' {
+			count++
+		} else if v == '1' {
+			break
+		}
+	}
+	return count
 }
 
 // 打印桶中的id
@@ -189,5 +202,36 @@ func (s *Bucket) printBucketContents() {
 */
 
 func main() {
+	//测试insert方法
+	// node1 := Node{nodeID: "000000001110"}
+	// node := Node{nodeID: "000000000001"}
+	// bucket := Bucket{}
+	// bucket.ids = append(bucket.ids, &node1)
+	// node.buckets = append(node.buckets, &bucket)
 
+	// node.InsertNode("000000000111")
+	// node.InsertNode("100000000110")
+	// node.InsertNode("000000000100")
+	// node.InsertNode("000000001111")
+	// // node.InsertNode("111111111110")
+
+	// for i, v := range node.buckets {
+	// 	fmt.Printf("buckets num is = %d \n", i)
+	// 	v.printBucketContents()
+	// 	fmt.Println("--------------------------")
+	// }
+
+	num1, _ := strconv.ParseInt("000000000001", 2, 0)
+	num2, _ := strconv.ParseInt("000000001111", 2, 0)
+	result := strconv.FormatUint(uint64(num1)^uint64(num2), 2)
+	fmt.Println("result = ", result)
+	count := 0
+	for _, v := range []byte(result) {
+		if v == '0' {
+			count++
+		} else if v == '1' {
+			break
+		}
+	}
+	fmt.Print("count = ", count)
 }
