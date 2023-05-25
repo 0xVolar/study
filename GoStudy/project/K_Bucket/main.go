@@ -20,12 +20,47 @@ func initNode(nodeId string) {
 
 }
 
+func (s *Node) FindNode(nodeID string, array []*Node) []*Node {
+	if s.nodeID == nodeID {
+		return nil
+	}
+
+	//执行insert操作
+	s.InsertNode(nodeID)
+
+	//寻找到对应的桶
+	result := findBucket(s.nodeID, nodeID)
+	var bucket *Bucket
+	if result >= (len(s.buckets) - 1) {
+		result = len(s.buckets) - 1
+		bucket = s.buckets[len(s.buckets)-1]
+	} else {
+		bucket = s.buckets[result]
+	}
+
+	//判断桶中是否存在该节点
+	for _, v := range bucket.ids {
+		if v.nodeID == nodeID {
+			return nil
+		}
+	}
+
+	//不存在就进行递归,桶中选取
+	for {
+		//对桶中进随机挑选
+
+		return nil
+	}
+
+	return nil
+}
+
 /*
 1.先异或生成距离
 2.找到对应的桶，在对应的K桶中找到距离最近的n（自定义）个节点
 3.返回对应的节点地址
 */
-func (s *Node) FindNode(id string) (*Node, *Node) {
+func (s *Node) getNodeAdd(id string) (*Node, *Node) {
 	//计算距离获取是第几个桶
 	result := findBucket(s.nodeID, id)
 	var a *Bucket
@@ -35,12 +70,8 @@ func (s *Node) FindNode(id string) (*Node, *Node) {
 		a = s.buckets[result]
 	}
 
-	//对桶中的节点进行遍历看是否有目标节点，如果没有的话返回随机的两个节点信息
-	for _, v := range a.ids {
-		if v.nodeID == id {
-			return v, v
-		}
-	}
+	//获取桶中的两条节点信息
+	//信息足够直接返回，信息不够从附近的桶中进行随机选取2个节点信息进行返回
 	//获取桶中最近的两个节点并返回
 	index1, index2 := GetRandom2()
 
@@ -185,7 +216,7 @@ func findBucket(selfId, targetId string) int {
 		return -1
 	}
 	result := strconv.FormatUint(uint64(num)^uint64(num1), 2)
-	return 12 - len([]byte(result))
+	return 160 - len([]byte(result))
 }
 
 // 打印桶中的id
@@ -194,11 +225,6 @@ func (s *Bucket) printBucketContents() {
 		fmt.Printf("nodeID = %s \n", v.nodeID)
 	}
 }
-
-/**
-1.新节点的加入
-	-
-*/
 
 func main() {
 	//测试insert方法
@@ -210,6 +236,7 @@ func main() {
 	node.InsertNode("000000001111")
 	node.InsertNode("111111111110")
 	node.InsertNode("000000001110")
+	// a := node.FindNode("000000000111", nil)
 
 	for i, v := range node.buckets {
 		fmt.Printf("buckets num is = %d \n", i)
