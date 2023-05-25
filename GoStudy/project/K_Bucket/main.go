@@ -79,18 +79,25 @@ func GetRandom2() (int, int) {
 */
 
 func (s *Node) InsertNode(nodeId string) bool {
+	if s.nodeID == nodeId {
+		return false
+	}
 	new_node := Node{nodeID: nodeId}
+	//判断是否为第一次加入节点,是的话就进行一个初始化功能
+	if len(s.buckets) == 0 {
+		bucket := Bucket{}
+		bucket.ids = append(bucket.ids, &new_node)
+		s.buckets = append(s.buckets, &bucket)
+		return true
+	}
 	result := findBucket(s.nodeID, nodeId)
 	if result < 0 {
 		return false
 	}
 
 	var index int
-	if result >= len(s.buckets)-1 {
+	if result >= (len(s.buckets) - 1) {
 		index = len(s.buckets) - 1
-		if index == -1 {
-			index = 0
-		}
 		insertIntoClose(index, &new_node, s)
 	} else {
 		index = result
@@ -178,7 +185,7 @@ func findBucket(selfId, targetId string) int {
 		return -1
 	}
 	result := strconv.FormatUint(uint64(num)^uint64(num1), 2)
-	return 160 - len([]byte(result))
+	return 12 - len([]byte(result))
 }
 
 // 打印桶中的id
@@ -195,17 +202,14 @@ func (s *Bucket) printBucketContents() {
 
 func main() {
 	//测试insert方法
-	node1 := Node{nodeID: "000000001110"}
 	node := Node{nodeID: "000000000001"}
-	bucket := Bucket{}
-	bucket.ids = append(bucket.ids, &node1)
-	node.buckets = append(node.buckets, &bucket)
 
 	node.InsertNode("000000000111")
 	node.InsertNode("100000000110")
 	node.InsertNode("000000000100")
 	node.InsertNode("000000001111")
 	node.InsertNode("111111111110")
+	node.InsertNode("000000001110")
 
 	for i, v := range node.buckets {
 		fmt.Printf("buckets num is = %d \n", i)
@@ -217,13 +221,5 @@ func main() {
 	// num2, _ := strconv.ParseInt("000000001111", 2, 0)
 	// result := strconv.FormatUint(uint64(num1)^uint64(num2), 2)
 	// fmt.Println("result = ", result)
-	// count := 0
-	// for _, v := range []byte(result) {
-	// 	if v == '0' {
-	// 		count++
-	// 	} else if v == '1' {
-	// 		break
-	// 	}
-	// }
-	// fmt.Print("count = ", count)
+	// // fmt.Print("count = ", count)
 }
