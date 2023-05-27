@@ -1,10 +1,9 @@
 package main
 
 import (
+	"crypto/rand"
 	"fmt"
-	"math/rand"
-	"strconv"
-	"time"
+	"math/big"
 )
 
 type Node struct {
@@ -45,7 +44,7 @@ func (s *Node) FindNode(nodeID string, array []*Node) []*Node {
 	}
 
 	//不存在就进行递归,桶中选取随机的两个节点
-	index1, index2 := GetRandom2()
+	index1, index2 := 1, 2
 
 	//判断两个新选取的节点的距离与传入的节点的距离相比
 	//如果找不到比传入节点更近的节点，寻找就结束（找不到比传入更近的）
@@ -75,29 +74,29 @@ func (s *Node) getNodeAdd(id string) (*Node, *Node) {
 	//获取桶中的两条节点信息
 	//信息足够直接返回，信息不够从附近的桶中进行随机选取2个节点信息进行返回
 	//获取桶中最近的两个节点并返回
-	index1, index2 := GetRandom2()
+	index1, index2 := 1, 2
 
 	return a.ids[index1], a.ids[index2]
 }
 
 // 生成两个随机数，0~2之间
-func GetRandom2() (int, int) {
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	// 随机生成两个不重复的整数
-	var first, second int
-	done := false
-	for !done {
-		first, second = r.Intn(3), r.Intn(3)
-		if first != second {
-			done = true
-			break
-		}
-		// 使用随机数生成器进行洗牌，确保随机数不重复
-	}
-	// 输出随机数
-	fmt.Println(first, second)
-	return first, second
-}
+// func GetRandom2() (int, int) {
+// 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+// 	// 随机生成两个不重复的整数
+// 	var first, second int
+// 	done := false
+// 	for !done {
+// 		first, second = r.Intn(3), r.Intn(3)
+// 		if first != second {
+// 			done = true
+// 			break
+// 		}
+// 		// 使用随机数生成器进行洗牌，确保随机数不重复
+// 	}
+// 	// 输出随机数
+// 	fmt.Println(first, second)
+// 	return first, second
+// }
 
 /**
 1.插入节点
@@ -161,17 +160,23 @@ func insertIntoClose(index int, new_node *Node, target_node *Node) {
 		//将所有节点放到一起
 		bucket.ids = append(bucket.ids, new_node)
 		//将每个节点的距离计算出来并加入数组之中
-		var distance []int
+		var distance []*big.Int
 		for _, v := range bucket.ids {
-			num1, _ := strconv.ParseInt(v.nodeID, 2, 0)
-			num2, _ := strconv.ParseInt(target_node.nodeID, 2, 0)
-			distance = append(distance, int(num1^num2))
+			// num1, _ := strconv.ParseInt(v.nodeID, 2, 0)
+			// num2, _ := strconv.ParseInt(target_node.nodeID, 2, 0)
+			num1 := new(big.Int)
+			num2 := new(big.Int)
+			num1.SetString(v.nodeID, 2)
+			num2.SetString(target_node.nodeID, 2)
+			xor := new(big.Int)
+			xor.Xor(num1, num2)
+			distance = append(distance, xor)
 		}
 		//对距离数组进行筛选，选出最近的1个节点加入最远桶
 		temp := distance[0]
 		index_max := 0
 		for i := 1; i < len(distance); i++ {
-			if distance[i] > temp {
+			if distance[i].Cmp(temp) > 0 {
 				temp = distance[i]
 				index_max = i
 			}
@@ -207,18 +212,14 @@ func isnertIntoFar(index int, new_node *Node, target_node *Node) {
 }
 
 func findBucket(selfId, targetId string) int {
-	num, err := strconv.ParseInt(selfId, 2, 0)
-	num1, err1 := strconv.ParseInt(targetId, 2, 0)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return -1
-	}
-	if err1 != nil {
-		fmt.Println("Error:", err)
-		return -1
-	}
-	result := strconv.FormatUint(uint64(num)^uint64(num1), 2)
-	return 160 - len(result)
+	num1 := new(big.Int)
+	num2 := new(big.Int)
+	num1.SetString(selfId, 2)
+	num2.SetString(targetId, 2)
+
+	result := new(big.Int)
+	result.Xor(num1, num2)
+	return (160 - len(fmt.Sprintf("%b", result)))
 }
 
 // 打印桶中的id
@@ -230,16 +231,29 @@ func (s *Bucket) printBucketContents() {
 
 func main() {
 	//测试insert方法
-	node := Node{nodeID: getBinaryStr()}
-	fmt.Println("FirstNodeID = ", node.nodeID)
+	// 生成100个不重复的160位二进制字符串
+	var binaryStrs []string
+	for len(binaryStrs) < 100 {
+		max := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 160), big.NewInt(1))
+		// 生成一个160位的随机二进制字符串
+		num, _ := rand.Int(rand.Reader, max)
+		binaryStr := fmt.Sprintf("%0160b", num)
 
-	count := 0
-	for i := 0; i < 4; i++ {
-		str := getBinaryStr()
-		node.InsertNode(str)
-		count++
+		// 检查这个二进制字符串是否已经存在
+		if !isDuplicate(binaryStr, binaryStrs) {
+			binaryStrs = append(binaryStrs, binaryStr)
+		}
 	}
 
+	node := Node{nodeID: binaryStrs[0]}
+	fmt.Println("nodeID = ", node.nodeID)
+
+	for i, v := range binaryStrs {
+		if i == 0 {
+			continue
+		}
+		node.InsertNode(v)
+	}
 	println("---------------------------------------------------------")
 
 	for i, v := range node.buckets {
@@ -248,23 +262,21 @@ func main() {
 		fmt.Println("--------------------------")
 	}
 
-	defer println("count = ", count)
-
 }
 
-func getBinaryStr() string {
-	seed := time.Now().UnixNano()
-	r := rand.New(rand.NewSource(seed))
-	binaryData := make([]byte, 160)
+func isDuplicate(binaryStr string, binaryStrs []string) bool {
+	// 将二进制字符串转换为大整数类型
+	num := new(big.Int)
+	num.SetString(binaryStr, 2)
 
-	for i := 0; i < 160; i++ {
-		v := r.Intn(2)
-		if v == 0 {
-			binaryData[i] = '0'
-		} else {
-			binaryData[i] = '1'
+	// 判断这个大整数是否已经存在
+	for _, str := range binaryStrs {
+		n := new(big.Int)
+		n.SetString(str, 2)
+		if n.Cmp(num) == 0 {
+			return true
 		}
 	}
 
-	return string(binaryData)
+	return false
 }
