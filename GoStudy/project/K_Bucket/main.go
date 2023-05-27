@@ -43,60 +43,51 @@ func (s *Node) FindNode(nodeID string, array []*Node) []*Node {
 		}
 	}
 
+	var node1, node2 *Node
 	//不存在就进行递归,桶中选取随机的两个节点
-	index1, index2 := 1, 2
+	if len(bucket.ids) == 2 {
+		index1, index2 := GetRandom2()
+		node1 = bucket.ids[index1]
+		node2 = bucket.ids[index2]
+	} else if len(bucket.ids) == 1 {
+		node1 = bucket.ids[0]
+	} 
 
 	//判断两个新选取的节点的距离与传入的节点的距离相比
 	//如果找不到比传入节点更近的节点，寻找就结束（找不到比传入更近的）
 	//如果找到的话执行FindNode，对更新的节点进行查找
-	nodes = append(nodes, bucket.ids[index1], bucket.ids[index2])
+	if 
+	nodes = append(nodes, node1, node2)
 
 	//将新节点FindNode返回的列表中的节点与传入的列表中的节点进行比对，选出最近的两个节点进行返回
 
 	return nodes
 }
 
-/*
-1.先异或生成距离
-2.找到对应的桶，在对应的K桶中找到距离最近的n（自定义）个节点
-3.返回对应的节点地址
-*/
-func (s *Node) getNodeAdd(id string) (*Node, *Node) {
-	//计算距离获取是第几个桶
-	result := findBucket(s.nodeID, id)
-	var a *Bucket
-	if result >= len(s.buckets) {
-		a = s.buckets[len(s.buckets)-1]
-	} else {
-		a = s.buckets[result]
-	}
-
-	//获取桶中的两条节点信息
-	//信息足够直接返回，信息不够从附近的桶中进行随机选取2个节点信息进行返回
-	//获取桶中最近的两个节点并返回
-	index1, index2 := 1, 2
-
-	return a.ids[index1], a.ids[index2]
-}
 
 // 生成两个随机数，0~2之间
-// func GetRandom2() (int, int) {
-// 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-// 	// 随机生成两个不重复的整数
-// 	var first, second int
-// 	done := false
-// 	for !done {
-// 		first, second = r.Intn(3), r.Intn(3)
-// 		if first != second {
-// 			done = true
-// 			break
-// 		}
-// 		// 使用随机数生成器进行洗牌，确保随机数不重复
-// 	}
-// 	// 输出随机数
-// 	fmt.Println(first, second)
-// 	return first, second
-// }
+func GetRandom2() (int, int) {
+	var nums [2]int
+	// 随机生成两个不重复的整数
+	for i := range nums {
+		num, err := rand.Int(rand.Reader, big.NewInt(10))
+		if err != nil {
+			// 处理错误
+			return -1, -1
+		}
+		nums[i] = int(num.Int64())
+	}
+	for nums[0] == nums[1] {
+		num, err := rand.Int(rand.Reader, big.NewInt(10))
+		if err != nil {
+			// 处理错误
+			fmt.Println(err)
+			return -1, -1
+		}
+		nums[1] = int(num.Int64())
+	}
+	return nums[0], nums[1]
+}
 
 /**
 1.插入节点
