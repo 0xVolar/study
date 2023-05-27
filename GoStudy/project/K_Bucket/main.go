@@ -21,12 +21,11 @@ func initNode(nodeId string) {
 }
 
 func (s *Node) FindNode(nodeID string, array []*Node) []*Node {
+	var nodes []*Node
+	// var isUpdate bool
 	if s.nodeID == nodeID {
 		return nil
 	}
-
-	//执行insert操作
-	s.InsertNode(nodeID)
 
 	//寻找到对应的桶
 	result := findBucket(s.nodeID, nodeID)
@@ -45,14 +44,17 @@ func (s *Node) FindNode(nodeID string, array []*Node) []*Node {
 		}
 	}
 
-	//不存在就进行递归,桶中选取
-	for {
-		//对桶中进随机挑选
+	//不存在就进行递归,桶中选取随机的两个节点
+	index1, index2 := GetRandom2()
 
-		return nil
-	}
+	//判断两个新选取的节点的距离与传入的节点的距离相比
+	//如果找不到比传入节点更近的节点，寻找就结束（找不到比传入更近的）
+	//如果找到的话执行FindNode，对更新的节点进行查找
+	nodes = append(nodes, bucket.ids[index1], bucket.ids[index2])
 
-	return nil
+	//将新节点FindNode返回的列表中的节点与传入的列表中的节点进行比对，选出最近的两个节点进行返回
+
+	return nodes
 }
 
 /*
@@ -216,7 +218,7 @@ func findBucket(selfId, targetId string) int {
 		return -1
 	}
 	result := strconv.FormatUint(uint64(num)^uint64(num1), 2)
-	return 160 - len([]byte(result))
+	return 160 - len(result)
 }
 
 // 打印桶中的id
@@ -228,15 +230,17 @@ func (s *Bucket) printBucketContents() {
 
 func main() {
 	//测试insert方法
-	node := Node{nodeID: "000000000001"}
+	node := Node{nodeID: getBinaryStr()}
+	fmt.Println("FirstNodeID = ", node.nodeID)
 
-	node.InsertNode("000000000111")
-	node.InsertNode("100000000110")
-	node.InsertNode("000000000100")
-	node.InsertNode("000000001111")
-	node.InsertNode("111111111110")
-	node.InsertNode("000000001110")
-	// a := node.FindNode("000000000111", nil)
+	count := 0
+	for i := 0; i < 4; i++ {
+		str := getBinaryStr()
+		node.InsertNode(str)
+		count++
+	}
+
+	println("---------------------------------------------------------")
 
 	for i, v := range node.buckets {
 		fmt.Printf("buckets num is = %d \n", i)
@@ -244,9 +248,23 @@ func main() {
 		fmt.Println("--------------------------")
 	}
 
-	// num1, _ := strconv.ParseInt("000000000001", 2, 0)
-	// num2, _ := strconv.ParseInt("000000001111", 2, 0)
-	// result := strconv.FormatUint(uint64(num1)^uint64(num2), 2)
-	// fmt.Println("result = ", result)
-	// // fmt.Print("count = ", count)
+	defer println("count = ", count)
+
+}
+
+func getBinaryStr() string {
+	seed := time.Now().UnixNano()
+	r := rand.New(rand.NewSource(seed))
+	binaryData := make([]byte, 160)
+
+	for i := 0; i < 160; i++ {
+		v := r.Intn(2)
+		if v == 0 {
+			binaryData[i] = '0'
+		} else {
+			binaryData[i] = '1'
+		}
+	}
+
+	return string(binaryData)
 }
