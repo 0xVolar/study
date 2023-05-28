@@ -15,10 +15,6 @@ type Bucket struct {
 	ids []*Node
 }
 
-func initNode(nodeId string) {
-
-}
-
 func (s *Node) FindNode(nodeID string, array []*Node) []*Node {
 	var nodes []*Node
 	var return_node []*Node
