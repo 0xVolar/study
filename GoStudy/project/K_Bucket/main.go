@@ -15,10 +15,11 @@ type Bucket struct {
 	ids []*Node
 }
 
+var nodesMap map[string]*Node
+
 func (s *Node) FindNode(nodeID string, array []*Node) []*Node {
 	var nodes []*Node
 	var return_node []*Node
-	// var isUpdate bool
 	if s.nodeID == nodeID {
 		nodes = append(nodes, s, s)
 		return nodes
@@ -73,7 +74,7 @@ func (s *Node) FindNode(nodeID string, array []*Node) []*Node {
 			if result == node1.nodeID {
 				array[i] = node1
 				isUpdate = i
-				return_node = append(return_node, node1.FindNode(nodeID, array)...)
+				return_node = append(return_node, nodesMap[node1.nodeID].FindNode(nodeID, array)...)
 			}
 		}
 
@@ -84,7 +85,7 @@ func (s *Node) FindNode(nodeID string, array []*Node) []*Node {
 			result := compareGetMin(nodeID, array[i].nodeID, node2.nodeID)
 			if result == node2.nodeID {
 				array[i] = node2
-				return_node = append(return_node, node2.FindNode(nodeID, array)...)
+				return_node = append(return_node, nodesMap[node2.nodeID].FindNode(nodeID, array)...)
 			}
 		}
 	} else if nodeNum == 1 {
@@ -106,12 +107,12 @@ func (s *Node) FindNode(nodeID string, array []*Node) []*Node {
 			if num3.Cmp(num1) < 0 {
 				array[0] = node1
 			}
-			return_node = append(return_node, node1.FindNode(nodeID, array)...)
+			return_node = append(return_node, nodesMap[node1.nodeID].FindNode(nodeID, array)...)
 		} else if result1.Cmp(result2) < 0 {
 			if num3.Cmp(num2) < 0 {
 				array[1] = node1
 			}
-			return_node = append(return_node, node1.FindNode(nodeID, array)...)
+			return_node = append(return_node, nodesMap[node1.nodeID].FindNode(nodeID, array)...)
 		}
 	} else {
 		return array
@@ -417,10 +418,15 @@ func testFindNode() {
 	var allNodes []*Node
 
 	node0 := Node{nodeID: binaryStrs[0]}
+	nodesMap[node0.nodeID] = &node0
 	node1 := Node{nodeID: binaryStrs[1]}
+	nodesMap[node1.nodeID] = &node1
 	node2 := Node{nodeID: binaryStrs[2]}
+	nodesMap[node2.nodeID] = &node2
 	node3 := Node{nodeID: binaryStrs[3]}
+	nodesMap[node3.nodeID] = &node3
 	node4 := Node{nodeID: binaryStrs[4]}
+	nodesMap[node4.nodeID] = &node4
 
 	nodes = append(nodes, &node0, &node1, &node2, &node3, &node4)
 	allNodes = append(allNodes, nodes...)
@@ -431,13 +437,14 @@ func testFindNode() {
 			if i == j {
 				continue
 			}
-			nodes[0].InsertNode(binaryStrs[j])
+			nodes[i].InsertNode(binaryStrs[j])
 		}
 	}
 
 	//将200个新结点进行初始化加入网络
 	for i := 5; i < len(binaryStrs); i++ {
 		newNode := Node{nodeID: binaryStrs[i]}
+		nodesMap[newNode.nodeID] = &newNode
 		//随机选取一个介绍人节点
 		num, err := rand.Int(rand.Reader, big.NewInt(5))
 		if err != nil {
@@ -476,6 +483,7 @@ func testFindNode() {
 }
 
 func main() {
+	nodesMap = make(map[string]*Node)
 	// testInsert()
 	testFindNode()
 }
