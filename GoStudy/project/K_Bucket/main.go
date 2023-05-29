@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/rand"
+	"crypto/sha1"
 	"fmt"
 	"math/big"
 )
@@ -9,23 +10,25 @@ import (
 type Node struct {
 	nodeID  string
 	buckets []*Bucket
+	keys    map[string][]byte
 }
 
 type Bucket struct {
-	ids []*Node
+	ids []string
 }
 
 var nodesMap map[string]*Node
 
-func (s *Node) FindNode(nodeID string, array []*Node) []*Node {
-	var nodes []*Node
-	var return_node []*Node
+func (s *Node) FindNode(nodeID string, array []string) []string {
+	var nodes []string
+	var return_node []string
 	if s.nodeID == nodeID {
-		nodes = append(nodes, s, s)
+		nodes = append(nodes, s.nodeID, s.nodeID)
 		return nodes
 	}
 
 	if len(s.buckets) == 0 {
+		s.InsertNode(nodeID)
 		return array
 	}
 
@@ -40,13 +43,13 @@ func (s *Node) FindNode(nodeID string, array []*Node) []*Node {
 
 	//判断桶中是否存在该节点
 	for _, v := range bucket.ids {
-		if v.nodeID == nodeID {
-			nodes = append(nodes, s, s)
+		if v == nodeID {
+			nodes = append(nodes, v, v)
 			return nodes
 		}
 	}
 
-	var node1, node2 *Node
+	var node1, node2 string
 	var nodeNum int
 	//不存在就进行递归,桶中选取随机的两个节点
 	if len(bucket.ids) == 2 {
@@ -70,11 +73,11 @@ func (s *Node) FindNode(nodeID string, array []*Node) []*Node {
 		//在第一遍比较的时候，对于array中已经发生交换的元素，在第二次比较的时候就会进行跳过
 		isUpdate := -1
 		for i, v := range array {
-			result := compareGetMin(nodeID, v.nodeID, node1.nodeID)
-			if result == node1.nodeID {
+			result := compareGetMin(nodeID, v, node1)
+			if result == node1 {
 				array[i] = node1
 				isUpdate = i
-				return_node = append(return_node, nodesMap[node1.nodeID].FindNode(nodeID, array)...)
+				return_node = append(return_node, nodesMap[node1].FindNode(nodeID, array)...)
 			}
 		}
 
@@ -82,10 +85,10 @@ func (s *Node) FindNode(nodeID string, array []*Node) []*Node {
 			if i == isUpdate {
 				continue
 			}
-			result := compareGetMin(nodeID, array[i].nodeID, node2.nodeID)
-			if result == node2.nodeID {
+			result := compareGetMin(nodeID, array[i], node2)
+			if result == node2 {
 				array[i] = node2
-				return_node = append(return_node, nodesMap[node2.nodeID].FindNode(nodeID, array)...)
+				return_node = append(return_node, nodesMap[node2].FindNode(nodeID, array)...)
 			}
 		}
 	} else if nodeNum == 1 {
@@ -94,9 +97,9 @@ func (s *Node) FindNode(nodeID string, array []*Node) []*Node {
 		num2 := new(big.Int)
 		num3 := new(big.Int)
 		num.SetString(nodeID, 2)
-		num1.SetString(array[0].nodeID, 2)
-		num2.SetString(array[1].nodeID, 2)
-		num3.SetString(node1.nodeID, 2)
+		num1.SetString(array[0], 2)
+		num2.SetString(array[1], 2)
+		num3.SetString(node1, 2)
 		//选出array中最大的与新结点进行比较
 		result1 := new(big.Int)
 		result1.Xor(num, num1)
@@ -107,21 +110,22 @@ func (s *Node) FindNode(nodeID string, array []*Node) []*Node {
 			if num3.Cmp(num1) < 0 {
 				array[0] = node1
 			}
-			return_node = append(return_node, nodesMap[node1.nodeID].FindNode(nodeID, array)...)
+			return_node = append(return_node, nodesMap[node1].FindNode(nodeID, array)...)
 		} else if result1.Cmp(result2) < 0 {
 			if num3.Cmp(num2) < 0 {
 				array[1] = node1
 			}
-			return_node = append(return_node, nodesMap[node1.nodeID].FindNode(nodeID, array)...)
+			return_node = append(return_node, nodesMap[node1].FindNode(nodeID, array)...)
 		}
 	} else {
+		// s.InsertNode(nodeID)
 		return array
 	}
 
 	//将新节点FindNode返回的列表中的节点与传入的列表中的节点进行比对，选出最近的两个节点进行返回
 	//将返回的节点信息中与array中不相同的节点加入array中
 	for _, v := range return_node {
-		if v.nodeID == array[0].nodeID || v.nodeID == array[1].nodeID {
+		if v == array[0] || v == array[1] {
 			continue
 		}
 		array = append(array, v)
@@ -129,12 +133,14 @@ func (s *Node) FindNode(nodeID string, array []*Node) []*Node {
 
 	//如果array的长度小于等于2的话，说明找到最小的2个节点或1一个节点的信息
 	if len(array) <= 2 {
+		// s.InsertNode(nodeID)
 		return array
 	}
 	//否则就挑选出arry中距离最小的两个元素放入nodes中
 	index_min1, index_min2 := get2MinIndex(array, nodeID)
 	nodes = append(nodes, array[index_min1], array[index_min2])
 
+	// s.InsertNode(nodeID)
 	return nodes
 }
 
@@ -158,13 +164,13 @@ func compareGetMin(targetValue, value1, value2 string) string {
 	}
 }
 
-func get2MinIndex(nodes []*Node, targetNode string) (int, int) {
+func get2MinIndex(nodes []string, targetNode string) (int, int) {
 	var distance []*big.Int
 	for _, v := range nodes {
 		num1 := new(big.Int)
 		num2 := new(big.Int)
 		num1.SetString(targetNode, 2)
-		num2.SetString(v.nodeID, 2)
+		num2.SetString(v, 2)
 		result := new(big.Int)
 		result.Xor(num1, num2)
 		distance = append(distance, result)
@@ -239,7 +245,7 @@ func (s *Node) InsertNode(nodeId string) bool {
 	//判断是否为第一次加入节点,是的话就进行一个初始化功能
 	if len(s.buckets) == 0 {
 		bucket := Bucket{}
-		bucket.ids = append(bucket.ids, &new_node)
+		bucket.ids = append(bucket.ids, new_node.nodeID)
 		s.buckets = append(s.buckets, &bucket)
 		return true
 	}
@@ -251,19 +257,19 @@ func (s *Node) InsertNode(nodeId string) bool {
 	var index int
 	if result >= (len(s.buckets) - 1) {
 		index = len(s.buckets) - 1
-		insertIntoClose(index, &new_node, s)
+		insertIntoClose(index, new_node.nodeID, s)
 	} else {
 		index = result
-		insertIntoFar(index, &new_node, s)
+		insertIntoFar(index, new_node.nodeID, s)
 	}
 	return true
 }
 
-func insertIntoClose(index int, newNode *Node, targetNode *Node) {
+func insertIntoClose(index int, newNode string, targetNode *Node) {
 	bucket := targetNode.buckets[index]
 	//判断桶中是否已经存在要加入的节点
 	for _, v := range bucket.ids {
-		if v.nodeID == newNode.nodeID {
+		if v == newNode {
 			return
 		}
 	}
@@ -287,7 +293,7 @@ func insertIntoClose(index int, newNode *Node, targetNode *Node) {
 			// num2, _ := strconv.ParseInt(target_node.nodeID, 2, 0)
 			num1 := new(big.Int)
 			num2 := new(big.Int)
-			num1.SetString(v.nodeID, 2)
+			num1.SetString(v, 2)
 			num2.SetString(targetNode.nodeID, 2)
 			xor := new(big.Int)
 			xor.Xor(num1, num2)
@@ -318,11 +324,11 @@ func insertIntoClose(index int, newNode *Node, targetNode *Node) {
 	}
 }
 
-func insertIntoFar(index int, newNode *Node, targetNode *Node) {
+func insertIntoFar(index int, newNode string, targetNode *Node) {
 	bucket := targetNode.buckets[index]
 	//查看桶中是否已经存在新的节点
 	for _, v := range bucket.ids {
-		if v.nodeID == newNode.nodeID {
+		if v == newNode {
 			return
 		}
 	}
@@ -347,7 +353,7 @@ func findBucket(selfId, targetId string) int {
 // 打印桶中的id
 func (s *Bucket) printBucketContents() {
 	for _, v := range s.ids {
-		fmt.Printf("nodeID = %s \n", v.nodeID)
+		fmt.Printf("nodeID = %s \n", v)
 	}
 }
 
@@ -461,12 +467,12 @@ func testFindNode() {
 				byte1[i] = '0'
 			}
 		}
-		var tempArray []*Node
+		var tempArray []string
 		far_node := Node{nodeID: string(byte1)}
-		tempArray = append(tempArray, &far_node, &far_node)
+		tempArray = append(tempArray, far_node.nodeID, far_node.nodeID)
 		nodeIds := nodes[num.Int64()].FindNode(newNode.nodeID, tempArray)
 		for _, v := range nodeIds {
-			newNode.InsertNode(v.nodeID)
+			newNode.InsertNode(v)
 		}
 		allNodes = append(allNodes, &newNode)
 	}
@@ -479,6 +485,160 @@ func testFindNode() {
 			fmt.Println("-----------------------------------------------------------------")
 		}
 		fmt.Println("********************************************************************************")
+	}
+}
+
+func (s *Node) SetValue(key string, value []byte) bool {
+	hash := sha1.Sum(value)
+	if key != string(hash[:]) {
+		return false
+	}
+	if s.keys[key] != nil {
+		return true
+	}
+
+	//将内容存入自己的节点中
+	s.keys[key] = value
+
+	//获取到最近的桶
+	result := findBucket(s.nodeID, key)
+	var bucket *Bucket
+	if result >= (len(s.buckets) - 1) {
+		bucket = s.buckets[len(s.buckets)-1]
+	} else {
+		bucket = s.buckets[result]
+	}
+
+	if len(bucket.ids) > 2 {
+		//桶中的数量超过2的话随机选取两个节点
+		index1, index2 := GetRandom2()
+		flag1 := nodesMap[bucket.ids[index1]].SetValue(key, value)
+		flag2 := nodesMap[bucket.ids[index2]].SetValue(key, value)
+		if flag1 || flag2 {
+			return true
+		} else {
+			return false
+		}
+	} else if len(bucket.ids) == 2 {
+		index1, index2 := 0, 1
+		flag1 := nodesMap[bucket.ids[index1]].SetValue(key, value)
+		flag2 := nodesMap[bucket.ids[index2]].SetValue(key, value)
+		if flag1 || flag2 {
+			return true
+		} else {
+			return false
+		}
+	} else {
+		index1 := 0
+		flag1 := nodesMap[bucket.ids[index1]].SetValue(key, value)
+		if flag1 {
+			return true
+		} else {
+			return false
+		}
+	}
+}
+
+func (s *Node) GetValue(key string) []byte {
+	if s.keys[key] != nil {
+		hash := sha1.Sum(s.keys[key])
+		if key != string(hash[:]) {
+			return nil
+		}
+		return s.keys[key]
+	}
+
+	//获取到最近的桶
+	result := findBucket(s.nodeID, key)
+	var bucket *Bucket
+	if result >= (len(s.buckets) - 1) {
+		bucket = s.buckets[len(s.buckets)-1]
+	} else {
+		bucket = s.buckets[result]
+	}
+
+	index1, index2 := checkLen(len(bucket.ids))
+	if index2 != -1 {
+		value1 := nodesMap[bucket.ids[index1]].GetValue(key)
+		value2 := nodesMap[bucket.ids[index2]].GetValue(key)
+
+		//判断返回的值是否为空，有几个为空，返回内容是否符合要求
+		if value1 == nil && value2 == nil {
+			return nil
+		} else if value1 != nil && value2 != nil {
+			hash1 := sha1.Sum(value1)
+			hash2 := sha1.Sum(value2)
+			if key != string(hash1[:]) && key != string(hash2[:]) {
+				return nil
+			} else {
+				if key != string(hash1[:]) {
+					return value2
+				}
+				return value1
+			}
+		} else {
+			var hash [20]byte
+			var value []byte
+			if value1 == nil {
+				hash = sha1.Sum(value2)
+				value = value2
+			} else {
+				hash = sha1.Sum(value1)
+				value = value1
+			}
+
+			if key != string(hash[:]) {
+				return nil
+			}
+			return value
+		}
+	} else {
+		index1 := 0
+		value := nodesMap[bucket.ids[index1]].GetValue(key)
+
+		if value == nil {
+			return nil
+		}
+
+		hash := sha1.Sum(value)
+		if key != string(hash[:]) {
+			return nil
+		}
+		return value
+	}
+}
+
+func checkLen(len int) (int, int) {
+	if len > 2 {
+		return GetRandom2()
+	} else if len == 2 {
+		return 0, 1
+	} else {
+		return 0, -1
+	}
+}
+
+func testValue() {
+	//生成100个节点，并完成网络的构建
+	var binaryStrs []string
+	for len(binaryStrs) < 101 {
+		max := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 160), big.NewInt(1))
+		// 生成一个160位的随机二进制字符串
+		num, _ := rand.Int(rand.Reader, max)
+		binaryStr := fmt.Sprintf("%0160b", num)
+
+		// 检查这个二进制字符串是否已经存在
+		if !isDuplicate(binaryStr, binaryStrs) {
+			binaryStrs = append(binaryStrs, binaryStr)
+		}
+	}
+
+	var nodes []*Node
+	//初始化
+	for _, v := range binaryStrs {
+		node := Node{nodeID: v}
+		nodes = append(nodes, &node)
+		nodesMap[v] = &node
 	}
 }
 
