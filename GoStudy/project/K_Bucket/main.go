@@ -3,6 +3,8 @@ package main
 import (
 	"crypto/rand"
 	"crypto/sha1"
+	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 )
@@ -18,6 +20,9 @@ type Bucket struct {
 }
 
 var nodesMap map[string]*Node
+
+var SetNodes []string
+var GetNodes []string
 
 func (s *Node) FindNode(nodeID string, array []string) []string {
 	var nodes []string
@@ -490,7 +495,8 @@ func testFindNode() {
 
 func (s *Node) SetValue(key string, value []byte) bool {
 	hash := sha1.Sum(value)
-	if key != string(hash[:]) {
+	hash_str := hex.EncodeToString(hash[:])
+	if key != hash_str {
 		return false
 	}
 	if s.keys[key] != nil {
@@ -501,7 +507,10 @@ func (s *Node) SetValue(key string, value []byte) bool {
 	s.keys[key] = value
 
 	//获取到最近的桶
-	result := findBucket(s.nodeID, key)
+	keyInt := new(big.Int)
+	str, _ := keyInt.SetString(key, 16)
+	keyBinary := fmt.Sprintf("%160b", str)
+	result := findBucket(s.nodeID, keyBinary)
 	var bucket *Bucket
 	if result >= (len(s.buckets) - 1) {
 		bucket = s.buckets[len(s.buckets)-1]
@@ -509,47 +518,67 @@ func (s *Node) SetValue(key string, value []byte) bool {
 		bucket = s.buckets[result]
 	}
 
-	if len(bucket.ids) > 2 {
-		//桶中的数量超过2的话随机选取两个节点
-		index1, index2 := GetRandom2()
-		flag1 := nodesMap[bucket.ids[index1]].SetValue(key, value)
-		flag2 := nodesMap[bucket.ids[index2]].SetValue(key, value)
-		if flag1 || flag2 {
-			return true
+	//查看找到的新的节点是否为最近的节点，如果是就进行递归，不是的话就停止递归
+	index1, index2 := checkLen(len(bucket.ids))
+	var flag1, flag2 bool
+	if index2 != -1 {
+		var maxStr string
+		minStr := compareGetMin(keyBinary, bucket.ids[index1], bucket.ids[index2])
+		if minStr == bucket.ids[index1] {
+			maxStr = bucket.ids[index2]
 		} else {
-			return false
+			maxStr = bucket.ids[index1]
 		}
-	} else if len(bucket.ids) == 2 {
-		index1, index2 := 0, 1
-		flag1 := nodesMap[bucket.ids[index1]].SetValue(key, value)
-		flag2 := nodesMap[bucket.ids[index2]].SetValue(key, value)
+		updateIndex := isUpdated(keyBinary, SetNodes, minStr)
+		if updateIndex == -1 {
+			return false
+		} else {
+			SetNodes[updateIndex] = minStr
+			flag1 = nodesMap[minStr].SetValue(key, value)
+		}
+		updateIndexMax := isUpdated(keyBinary, SetNodes, maxStr)
+		if updateIndexMax != -1 {
+			SetNodes[updateIndexMax] = maxStr
+			flag2 = nodesMap[maxStr].SetValue(key, value)
+		}
 		if flag1 || flag2 {
 			return true
 		} else {
 			return false
 		}
 	} else {
-		index1 := 0
-		flag1 := nodesMap[bucket.ids[index1]].SetValue(key, value)
-		if flag1 {
+		var flag bool
+		updateIndex := isUpdated(keyBinary, SetNodes, bucket.ids[0])
+		if updateIndex == -1 {
+			return false
+		} else {
+			SetNodes[updateIndex] = bucket.ids[0]
+			flag = nodesMap[bucket.ids[0]].SetValue(key, value)
+		}
+		if flag {
 			return true
 		} else {
 			return false
 		}
 	}
+
 }
 
 func (s *Node) GetValue(key string) []byte {
 	if s.keys[key] != nil {
 		hash := sha1.Sum(s.keys[key])
-		if key != string(hash[:]) {
+		hash_str := hex.EncodeToString(hash[:])
+		if key != hash_str {
 			return nil
 		}
 		return s.keys[key]
 	}
 
 	//获取到最近的桶
-	result := findBucket(s.nodeID, key)
+	keyInt := new(big.Int)
+	str, _ := keyInt.SetString(key, 16)
+	keyBinary := fmt.Sprintf("%160b", str)
+	result := findBucket(s.nodeID, keyBinary)
 	var bucket *Bucket
 	if result >= (len(s.buckets) - 1) {
 		bucket = s.buckets[len(s.buckets)-1]
@@ -559,16 +588,37 @@ func (s *Node) GetValue(key string) []byte {
 
 	index1, index2 := checkLen(len(bucket.ids))
 	if index2 != -1 {
-		value1 := nodesMap[bucket.ids[index1]].GetValue(key)
-		value2 := nodesMap[bucket.ids[index2]].GetValue(key)
+		var maxStr string
+		var value1 []byte
+		var value2 []byte
+		minStr := compareGetMin(keyBinary, bucket.ids[index1], bucket.ids[index2])
+		if minStr == bucket.ids[index1] {
+			maxStr = bucket.ids[index2]
+		} else {
+			maxStr = bucket.ids[index1]
+		}
+		updateIndex := isUpdated(keyBinary, GetNodes, minStr)
+		if updateIndex == -1 {
+			return nil
+		} else {
+			GetNodes[updateIndex] = minStr
+			value1 = nodesMap[minStr].GetValue(key)
+		}
 
-		//判断返回的值是否为空，有几个为空，返回内容是否符合要求
+		updateIndexMax := isUpdated(keyBinary, GetNodes, maxStr)
+		if updateIndexMax != -1 {
+			GetNodes[updateIndexMax] = maxStr
+			value2 = nodesMap[maxStr].GetValue(key)
+		}
+
 		if value1 == nil && value2 == nil {
 			return nil
 		} else if value1 != nil && value2 != nil {
 			hash1 := sha1.Sum(value1)
+			hash1_str := hex.EncodeToString(hash1[:])
 			hash2 := sha1.Sum(value2)
-			if key != string(hash1[:]) && key != string(hash2[:]) {
+			hash2_str := hex.EncodeToString(hash2[:])
+			if key != hash1_str && key != hash2_str {
 				return nil
 			} else {
 				if key != string(hash1[:]) {
@@ -577,34 +627,39 @@ func (s *Node) GetValue(key string) []byte {
 				return value1
 			}
 		} else {
-			var hash [20]byte
+			var hash_str string
 			var value []byte
 			if value1 == nil {
-				hash = sha1.Sum(value2)
+				hash := sha1.Sum(value2)
+				hash_str = hex.EncodeToString(hash[:])
 				value = value2
 			} else {
-				hash = sha1.Sum(value1)
+				hash := sha1.Sum(value1)
+				hash_str = hex.EncodeToString(hash[:])
 				value = value1
 			}
-
-			if key != string(hash[:]) {
+			if key != hash_str {
 				return nil
 			}
 			return value
 		}
 	} else {
-		index1 := 0
-		value := nodesMap[bucket.ids[index1]].GetValue(key)
-
+		updateIndex := isUpdated(key, GetNodes, bucket.ids[0])
+		if updateIndex == -1 {
+			return nil
+		}
+		GetNodes[updateIndex] = bucket.ids[0]
+		value := nodesMap[bucket.ids[0]].GetValue(key)
 		if value == nil {
 			return nil
+		} else {
+			hash := sha1.Sum(value)
+			hash_str := hex.EncodeToString(hash[:])
+			if key != hash_str {
+				return nil
+			}
+			return value
 		}
-
-		hash := sha1.Sum(value)
-		if key != string(hash[:]) {
-			return nil
-		}
-		return value
 	}
 }
 
@@ -618,10 +673,52 @@ func checkLen(len int) (int, int) {
 	}
 }
 
+func isUpdated(targetValue string, nodes []string, compare string) int {
+	targetBinary := new(big.Int)
+	targetBinary.SetString(targetValue, 2)
+	compareBinary := new(big.Int)
+	compareBinary.SetString(compare, 2)
+	minValue := compareGetMin(targetValue, nodes[0], nodes[1])
+	if minValue == nodes[0] {
+		maxValueBinary := new(big.Int)
+		maxValueBinary.SetString(nodes[1], 2)
+		resultMaxValue := new(big.Int)
+		resultMaxValue.Xor(targetBinary, maxValueBinary)
+		resultCom := new(big.Int)
+		resultCom.Xor(targetBinary, compareBinary)
+		if resultCom.Cmp(resultMaxValue) < 0 {
+			return 1
+		}
+	} else {
+		maxValueBinary := new(big.Int)
+		maxValueBinary.SetString(nodes[0], 2)
+		resultMaxValue := new(big.Int)
+		resultMaxValue.Xor(targetBinary, maxValueBinary)
+		resultCom := new(big.Int)
+		resultCom.Xor(targetBinary, compareBinary)
+		if resultCom.Cmp(resultMaxValue) < 0 {
+			return 0
+		}
+	}
+	return -1
+}
+
+func inverse(value string) string {
+	byteArray := []byte(value)
+	for i, v := range byteArray {
+		if v == '0' {
+			byteArray[i] = '1'
+		} else {
+			byteArray[i] = '0'
+		}
+	}
+	return string(byteArray)
+}
+
 func testValue() {
 	//生成100个节点，并完成网络的构建
 	var binaryStrs []string
-	for len(binaryStrs) < 101 {
+	for len(binaryStrs) < 100 {
 		max := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 160), big.NewInt(1))
 		// 生成一个160位的随机二进制字符串
 		num, _ := rand.Int(rand.Reader, max)
@@ -639,11 +736,79 @@ func testValue() {
 		node := Node{nodeID: v}
 		nodes = append(nodes, &node)
 		nodesMap[v] = &node
+		node.keys = make(map[string][]byte)
 	}
+	for i, v := range nodes {
+		for j, k := range binaryStrs {
+			if i == j {
+				continue
+			}
+			v.InsertNode(k)
+		}
+	}
+
+	//生成200个随机字符串,并生成对应的hash
+	var strs []string
+	var hashs []string
+	for i := 0; i < 200; i++ {
+		length := 8 // 随机生成长度为8的字符串
+		bytes := make([]byte, length)
+		rand.Read(bytes) // 从随机源中读取指定长度的随机字节序列
+		str := base64.URLEncoding.EncodeToString(bytes)
+		strs = append(strs, str)
+		hash := sha1.Sum([]byte(str))
+		hash_str := hex.EncodeToString(hash[:])
+		hashs = append(hashs, hash_str)
+	}
+
+	//寻找一个随机节点
+	num, _ := rand.Int(rand.Reader, big.NewInt(100))
+	for i, v := range strs {
+		hashInverse := inverse(hashs[i])
+		if len(SetNodes) == 0 {
+			SetNodes = append(SetNodes, hashInverse, hashInverse)
+		} else {
+			SetNodes[0] = hashInverse
+			SetNodes[1] = hashInverse
+		}
+		nodes[num.Int64()].SetValue(hashs[i], []byte(v))
+	}
+
+	//生成100个随机数
+	var nums []int
+	var isExist [200]bool
+	for len(nums) < 100 {
+		num1, _ := rand.Int(rand.Reader, big.NewInt(200))
+		if !isExist[num1.Int64()] {
+			nums = append(nums, int(num1.Int64()))
+			isExist[num1.Int64()] = true
+		}
+	}
+	for _, v := range nums {
+		num2, _ := rand.Int(rand.Reader, big.NewInt(100))
+		hashInverse := inverse(hashs[v])
+		if len(GetNodes) == 0 {
+			GetNodes = append(GetNodes, hashInverse, hashInverse)
+		} else {
+			GetNodes[0] = hashInverse
+			GetNodes[1] = hashInverse
+		}
+
+		value := nodesMap[nodes[num2.Int64()].nodeID].GetValue(hashs[v])
+		fmt.Println("key is", hashs[v])
+		if value != nil {
+			fmt.Println("value is ", string(value))
+		} else {
+			fmt.Println("Can't find value")
+		}
+		fmt.Println("----------------------------------")
+	}
+
 }
 
 func main() {
 	nodesMap = make(map[string]*Node)
 	// testInsert()
-	testFindNode()
+	// testFindNode()
+	testValue()
 }
