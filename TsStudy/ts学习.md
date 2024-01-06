@@ -37,3 +37,19 @@ TS中对于单个存在的值会定义为值类型，**在使用const命名变�
 
 - ` let x : string|number； `这句话就表示x的类型可以是number型和string型。
 - `let x : 'male' | 'female'`这句话就表示x的类型是string型，而且必须只能为‘male’或者‘female’，如果输入其他的的字符串则会报错。
+
+## 交叉类型
+
+指的是用多个类型连接起来表示新的类型，**类型中间\'&'**来进行连接，而且声明该类型的变量要同时拥有两个类型。eg
+
+- ` let x : string & number `,此时表示的x是never类型，因为一个变量不可能同时拥有两种类型，所以就认为是never类型。
+- `let obj : {foo : number & bar : string}`,这是常用的**交叉类型的使用手法，用来表示对象的合成**
+
+## type命令
+
+- **type命令属于类型相关代码，在翻译为js时会被删除，但引用其类型的变量在翻译为js时会转换为js所支持的类型**
+- **type通常用于定义一个类型的别名，通常使用来对对象的别名**
+- type定义的别名只能定义一次，不允许重名。但是在不同的作用域中可以允许重名。
+eg ：  
+` type Age = number;`  
+`type MyType = {foo : string, bar : number};`**这是常用的用法，为了使得代码更简洁可读**
