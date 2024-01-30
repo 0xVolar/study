@@ -65,3 +65,4 @@ eg ：
   - ` const arr :readonly number[] = [0, 1]; `，这种声明的为只读数组
   - 只读数组相当于父类，一般的数组时其子类。**父类可以兼容子类，反之则不行**，eg：` let a1 : number[] = [0, 1];  let a2 : readonly number[] = [0, 1 ,2]; `.t若要让**a1 = a2，则会报错**，让**a2 = a1**则正确。
   - **只读数组不能与泛型写到一起**，但是可以使用**ReadonlyArry<>和Readonly<type[]>**这两个专门的泛型来生成只读数组类型。
+
